@@ -1,5 +1,12 @@
+import AppError from "../utils/AppError.js";
+
 class UserController {
     create (req, res) {
+        const {name, age} = req.body;
+
+        if(!name)
+            throw new AppError("Nome é obrigatório");
+        res.status(201);
         res.send("UserController CREATE");
     } 
 

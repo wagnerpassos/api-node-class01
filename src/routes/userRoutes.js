@@ -5,13 +5,13 @@ const userController = new UserController();
 
 const userRouter = Router();
 
-userRouter.get('/:id', userController.findById);
+userRouter.get('/user/:id', userController.findById);
 
 userRouter.get('/', userController.read);
 
 userRouter.post('/', userController.create);
 
-userRouter.put('/', userController.update);
+userRouter.put('/:id', userController.update);
 
 userRouter.delete('/', userController.delete);
 

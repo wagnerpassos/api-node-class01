@@ -1,22 +1,25 @@
-import AppError from "../utils/AppError.js";
 import db from '../database/mysqlDB.js';
+import bcryptjs from 'bcryptjs';
+import AppError from '../utils/AppError.js';
 
 class UserController {
-    create(req, res) {
-        const {name, email, password } = req.body;
+    async create(req, res) {
+        const { name, email, password } = req.body;
+
+        const hashedPassword = bcryptjs.hashSync(password, 8);
 
         const query = ` INSERT INTO users(name, email, password) 
-                    VALUES ("${name}", "${email}", "${password}")`;
+                    VALUES ("${name}", "${email}", "${hashedPassword}")`;
 
         db.query(query, (err, data) => {
             if (err)
-                return res.json(err);
+                throw new AppError("Ocorreu um erro!", 400);
 
             return res.status(201).json(data);
         });
     }
 
-    read(req, res) {
+    async read(req, res) {
         console.log(req.query);
 
         const query = ` SELECT * FROM USERS`;
@@ -24,7 +27,7 @@ class UserController {
         try {
             db.query(query, (err, data) => {
                 if (err)
-                    return res.json(err);
+                    throw new AppError("Ocorreu um erro!", 400);
 
                 return res.status(200).json(data);
             });
@@ -33,17 +36,39 @@ class UserController {
         }
     }
 
-    findById(req, res) {
+    async findById(req, res) {
         res.send("UserController findID");
     }
 
-    update(req, res) {
-        res.send("UserController UPDATE");
+    async update(req, res) {
+        const { id } = req.params;
+        const query = `SELECT * FROM users WHERE id = ${id}`;
+    
+        try {
+            const data = await new Promise((resolve, reject) => {
+                db.query(query, (err, data) => {
+                    if (err) {
+                        reject(new AppError("Ocorreu um erro!"));
+                    } else {
+                        resolve(data);
+                    }
+                });
+            });
+    
+            if (!data[0]) {
+                throw new AppError("Usuário não encontrado!");
+            }
+    
+            res.json(data[0]);
+        } catch (error) {
+            return res.status(400).json({ "error": error.message });
+        }
     }
+    
 
-    delete(req, res) {
-        res.send("UserController DELETE");
-    }
+    async delete (req, res) {
+            res.send("UserController DELETE");
+        }
 }
 
 export default UserController;

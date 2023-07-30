@@ -1,17 +1,26 @@
 import AppError from "../utils/AppError.js";
+import db from '../database/mysqlDB.js';
 
 class UserController {
     create (req, res) {
-        const {name, age} = req.body;
-
-        if(!name)
-            throw new AppError("Nome é obrigatório");
-        res.status(201);
         res.send("UserController CREATE");
     } 
 
     read (req, res) {
-        res.send("UserController READ");
+        console.log(req.query);
+
+        const query = ` SELECT * FROM USER`;
+
+        try{
+            db.query(query, (err, data) => {
+                if(err)
+                    return res.json(err);
+    
+                return res.status(200).json(data);
+            });
+        } catch (error) {
+            return res.status(405).json({"error": error});
+        }  
     }
 
     findById (req, res) {

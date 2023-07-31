@@ -20,8 +20,6 @@ class UserController {
     }
 
     async read(req, res) {
-        console.log(req.query);
-
         const query = ` SELECT * FROM USERS`;
 
         try {
@@ -41,8 +39,11 @@ class UserController {
     }
 
     async update(req, res) {
+        const { name, email } = req.body;
         const { id } = req.params;
+
         const query = `SELECT * FROM users WHERE id = ${id}`;
+        
     
         try {
             const data = await new Promise((resolve, reject) => {
@@ -58,10 +59,18 @@ class UserController {
             if (!data[0]) {
                 throw new AppError("Usuário não encontrado!");
             }
-    
-            res.json(data[0]);
+
+            const queryUpdate = `UPDATE users SET name = "${data[0].name}", email = "${data[0].email}" WHERE id = ${id}`;
+            
+            db.query(queryUpdate, (err, data) => {
+                if (err)
+                    throw new AppError("Ocorreu um erro!", 400);
+
+                return res.status(200).json(data);
+            });
+            
         } catch (error) {
-            return res.status(400).json({ "error": error.message });
+             return res.status(404).json({ "error": error.message });
         }
     }
     

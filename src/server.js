@@ -23,7 +23,7 @@ app.use((error, req, res, next) => {
         status: "error",
         message: "Internal server error!" 
     });
-})
+});
 
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);

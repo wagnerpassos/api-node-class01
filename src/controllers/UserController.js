@@ -39,16 +39,16 @@ class UserController {
     }
 
     async update(req, res) {
-        const { name, email } = req.body;
+        const { name, email, password, old_password } = req.body;
         const { id } = req.params;
-        const values = [name, email, id];
+
         const query = `SELECT * FROM users WHERE id = ${id}`;
         const queryUpdate = `UPDATE users 
-                    SET name = ?, email = ?
+                    SET name = ?, email = ?, password = ?, updated_at = ?
                     WHERE id = ?`;
 
         try {
-            const data = await new Promise((resolve, reject) => {
+            const user = await new Promise((resolve, reject) => {
                 db.query(query, (err, data) => {
                     if (err) {
                         reject(new AppError("Ocorreu um erro!"));
@@ -58,17 +58,47 @@ class UserController {
                 });
             });
 
-            if (!data[0]) {
+            if (!user) {
                 throw new AppError("Usuário não encontrado!");
             }
 
+            if(password && !old_password){
+                throw new AppError("Você precisa informar a senha antiga!");
+            }
+
+            if(password && old_password){
+                const checkOldPassword = await bcryptjs.compare(old_password, user[0].password);
+
+                if(!checkOldPassword){
+                    throw new AppError("Senha anterior não confere!");
+                }
+
+                user[0].password = bcryptjs.hashSync(password, 8);
+            } 
+
+            if(name && name.length > 3 ){
+                user[0].name = name;
+            }
+
+            if(email && email.length > 3 ){
+                user[0].email = email;
+            }
+
             
+            const formattedDate = new Date().toISOString().slice(0, 19).replace('T', ' ');
+            
+            const values = [user[0].name, user[0].email, user[0].password, formattedDate, id];
 
-            db.query(queryUpdate, values, (err, data) => {
-                if (err)
-                    throw new AppError("Ocorreu um erro!", 400);
+            console.log(values);
 
-                return res.status(200).json(data);
+            return await new Promise((resolve, reject) => {
+                db.query(queryUpdate, values, (err, data) => {
+                    if (err) {
+                        reject(new AppError("Ocorreu um erro no update!"));
+                    } else {
+                        resolve(res.status(200).json(data));
+                    }
+                });
             });
 
         } catch (error) {
@@ -76,9 +106,9 @@ class UserController {
         }
     }
 
-
     async delete(req, res) {
         const { id } = req.params;
+
         const values = [id];
         const query = `SELECT * FROM users WHERE id = ${id}`;
         const queryDelete = `DELETE FROM users 
